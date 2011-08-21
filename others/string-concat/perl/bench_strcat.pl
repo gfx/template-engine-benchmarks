@@ -8,6 +8,7 @@
 use strict;
 use warnings;
 use Benchmarker;
+use Text::Xslate;
 
 my $items = [
     "Haruhi", "Mikuru", "Yuki", "Itsuki", "Kyon",
@@ -34,7 +35,7 @@ sub verify {
 
 
 my $loop  = $ENV{'N'} || 10000;
-my $cycle = $ENV['C'] || 3;
+my $cycle = $ENV{'C'} || 3;
 
 my $bm = Benchmarker->new($loop, $cycle);
 
@@ -89,6 +90,40 @@ $bm->task('$str.$str.$str', sub {
   </tr>\n";
         }
         $out .= "</table>\n";
+    }
+    print "*** \$out=$out\n" if $debug;
+    verify($out) if $debug;
+});
+
+my %vpath = (
+    table => <<'T',
+<table>
+  : for [1 .. 20] -> $j {
+  <tr>
+    <td><: $s1 :></td>
+    <td><: $s2 :></td>
+    <td><: $s3 :></td>
+    <td><: $s4 :></td>
+    <td><: $s5 :></td>
+  </tr>
+  : }
+</table>
+T
+);
+my $xslate = Text::Xslate->new(
+    path => [\%vpath],
+);
+$bm->task('xslate', sub {
+    my ($loop, ) = @_;
+    my $out;
+    for my $i (1..$loop) {
+        $out = $xslate->render(table => {
+                s1   => $s1,
+                s2   => $s2,
+                s3   => $s3,
+                s4   => $s4,
+                s5   => $s5,
+        });
     }
     print "*** \$out=$out\n" if $debug;
     verify($out) if $debug;
